@@ -1,0 +1,740 @@
+﻿﻿
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Go on...</title>
+
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <meta name="theme-color" content="#2a2a2a" />
+
+    <style>
+        :root {
+            --bg: #2a2a2a;
+            --accent: #9b59b6;
+            --green: #198754;
+            --red: #dc3545;
+            --text: #f0f0f0;
+            --border: rgba(108, 117, 125, 0.45);
+            --control-size: 14px;
+            --gap: 12px;
+            --edge-pad: 22px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            max-width: 560px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            padding: var(--edge-pad);
+            box-sizing: border-box;
+            gap: var(--gap);
+        }
+
+        .display {
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 12px;
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.4;
+            min-height: 100px;
+            max-height: 60vh;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tiny-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button.control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            font-size: var(--control-size);
+            min-width: 110px;
+            transition: all .15s ease;
+        }
+
+            button.control:active {
+                transform: scale(.99);
+            }
+
+        button.mic {
+            border-color: var(--green);
+            color: var(--green);
+            min-width: 140px;
+            padding: 14px 18px;
+            font-size: 16px;
+        }
+
+            button.mic.mic-active {
+                background: var(--red);
+                border-color: var(--red);
+                color: #fff;
+                animation: pulse 1.4s infinite;
+            }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0.04);
+            }
+
+            70% {
+                transform: scale(1.04);
+                box-shadow: 0 0 0 10px rgba(255,255,255,0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0);
+            }
+        }
+
+        .append-btn {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 6px;
+            min-width: 56px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+            .append-btn:active {
+                transform: scale(.98);
+            }
+
+        /* Toggle button group styles */
+        .toggle-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all .15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .toggle-btn.selected {
+                border-color: var(--accent);
+                color: var(--accent);
+                background: rgba(155, 89, 182, 0.12);
+            }
+
+            .toggle-btn i {
+                font-size: 16px;
+            }
+
+        @media(max-width:480px) {
+            .controls, .tiny-controls, .toggle-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            button.control, button.mic, .append-btn {
+                width: 100%;
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div id="display" class="display" contenteditable="false" spellcheck="false" aria-label="Transcribed text"></div>
+
+        <div class="controls">
+            <button id="micBtn" class="control mic" title="Start / Stop (records until pause)">
+                <i id="micIcon" class="fa fa-play"></i>
+                <span id="micLabel" class="label">Go Ahead</span>
+            </button>
+
+            <button id="editBtn" class="control" title="Edit text (toggle)">
+                <i class="fa fa-pen"></i><span class="label">Edit</span>
+            </button>
+
+            <button id="copyBtn" class="control" title="Copy to clipboard">
+                <i class="fa fa-copy"></i><span class="label">Send</span>
+            </button>
+        </div>
+
+        <div class="tiny-controls">
+            <button id="appendDot" class="append-btn" title="Append '.'">Period</button>
+            <button id="appendNewline" class="append-btn" title="Append newline">Enter</button>
+            <button id="appendDotNewline" class="append-btn" title="Append '.' + newline">Period + Enter</button>
+        </div>
+
+        <!-- Language toggle -->
+        <div class="toggle-group" id="langGroup">
+            <button class="toggle-btn selected" data-value="en-US">🇬🇧 English</button>
+            <button class="toggle-btn" data-value="yo-NG">🇳🇬 Yoruba</button>
+        </div>
+
+        <!-- Programming toggle -->
+        <div class="toggle-group" id="progGroup">
+            <button class="toggle-btn selected" data-value="plain">Plain</button>
+            <button class="toggle-btn" data-value="java"><i class="fa-brands fa-java"></i> Java</button>
+            <button class="toggle-btn" data-value="python"><i class="fa-brands fa-python"></i> Python</button>
+        </div>
+    </div>
+
+    <script>
+        (async function () {
+            const display = document.getElementById('display');
+            const micBtn = document.getElementById('micBtn');
+            const micIcon = document.getElementById('micIcon');
+            const micLabel = document.getElementById('micLabel');
+            const editBtn = document.getElementById('editBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const appendDot = document.getElementById('appendDot');
+            const appendNewline = document.getElementById('appendNewline');
+            const appendDotNewline = document.getElementById('appendDotNewline');
+
+            const langGroup = document.getElementById('langGroup');
+            const progGroup = document.getElementById('progGroup');
+
+            let recognition = null;
+            let listening = false;
+            let editing = false;
+
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!Speech) {
+                micBtn.disabled = true;
+                micLabel.textContent = 'Not supported';
+                return;
+            }
+
+            recognition = new Speech();
+            recognition.lang = 'en-US';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                listening = true;
+                micBtn.classList.add('mic-active');
+                micIcon.className = 'fa fa-stop';
+                micLabel.textContent = 'Working...';
+            };
+
+            recognition.onend = () => {
+                listening = false;
+                micBtn.classList.remove('mic-active');
+                micIcon.className = 'fa fa-play';
+                micLabel.textContent = 'Go Ahead';
+            };
+
+            recognition.onresult = (evt) => {
+                let text = evt.results[0][0].transcript.trim();
+                if (!text) return;
+
+                // Interpret depending on which mode is active
+                if (recognition.lang === 'yo-NG') {
+                    // Step 1: Translate Yoruba → English
+                    text = translateYorubaToEnglish(text);
+                }
+
+                // Step 2: Apply symbol mapping based on active programming mode
+                if (currentProg === 'java') {
+                    text = interpretJavaSpeech(text);
+                } else if (currentProg === 'python') {
+                    text = interpretPythonSpeech(text);
+                }
+
+
+
+                const existing = display.textContent || '';
+                if (!existing) {
+                    display.textContent = text;
+                } else {
+                    const separator = /\s$/.test(existing) ? '' : ' ';
+                    display.textContent = existing + separator + text;
+                }
+
+            };
+
+            micBtn.addEventListener('click', () => {
+                if (!recognition) return;
+                if (!listening) {
+                    try { recognition.start(); } catch (e) { console.warn(e); }
+                } else {
+                    try { recognition.stop(); } catch (_) { }
+                }
+            });
+
+            editBtn.addEventListener('click', () => {
+                editing = !editing;
+                display.contentEditable = !!editing;
+                if (editing) {
+                    editBtn.innerHTML = '<i class="fa fa-check"></i><span class="label">Done</span>';
+                    display.focus();
+                    placeCaretAtEnd(display);
+                } else {
+                    editBtn.innerHTML = '<i class="fa fa-pen"></i><span class="label">Edit</span>';
+                    display.blur();
+                }
+            });
+
+            copyBtn.addEventListener('click', async () => {
+                const txt = (display.textContent || '').trim();
+                if (!txt) return;
+
+                try {
+                    await navigator.clipboard.writeText(txt);
+
+                    // Placeholder: external call or post-back
+                    onTranscribedSend(txt);
+
+                    const original = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fa fa-check"></i><span class="label">Sent!</span>';
+                    setTimeout(() => copyBtn.innerHTML = original, 1300);
+                } catch (err) {
+                    alert('Clipboard write failed: ' + err);
+                }
+            });
+
+            function onTranscribedSend(text) {
+                console.log("Send placeholder called with:", text);
+                // future: post back to form or external bridge
+            }
+
+            function appendText(s) {
+                const existing = display.textContent || '';
+                display.textContent = existing + s;
+                if (display.isContentEditable) placeCaretAtEnd(display);
+            }
+            appendDot.onclick = () => appendText('.');
+            appendNewline.onclick = () => appendText('\n');
+            appendDotNewline.onclick = () => appendText('.\n');
+
+            // Toggle handling
+            function setupToggle(group, onSelect) {
+                group.querySelectorAll('.toggle-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        onSelect(btn.dataset.value);
+                    });
+                });
+            }
+
+            setupToggle(langGroup, (v) => {
+                if (recognition) recognition.lang = v;
+            });
+
+            let currentProg = 'plain';
+
+            setupToggle(progGroup, (v) => {
+                currentProg = v;
+                console.log('Programming language set to', v);
+            });
+
+            function placeCaretAtEnd(el) {
+                el.focus();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+
+            if ('serviceWorker' in navigator) {
+                try { await navigator.serviceWorker.register('sw.js'); } catch (e) { }
+            }
+
+        })();
+
+        // === Yoruba → English keyword mapping ===
+        const yorubaToEnglish = {
+            // Structure / delimiters
+            "ṣi": "open",
+            "pade": "close",
+            "iyika": "bracket",
+            "idimu": "brace",
+            "apo": "square bracket",
+
+            // Punctuation and separators
+            "aami idajọ": "semicolon",
+            "ami idajọ": "semicolon",
+            "aami isopọ": "colon",
+            "ami isopọ": "colon",
+            "aami ifakọ": "comma", //ìfàkọ
+            "ami ifakọ": "comma", //ìfàkọ
+            "aami atẹjade": "dot",
+            "ami atẹjade": "dot",
+            "aami asọye": "quote",
+            "ami asọye": "quote",
+            "aami ifọrọ": "single quote", //ìfọ̀rọ̀
+            "ami ifọrọ": "single quote", //ìfọ̀rọ̀
+            "aaye": "space",
+            "titẹ": "enter", // títẹ̀
+            "ila tuntun": "newline", // làìnítẹ̀
+            "illa titun": "newline", // làìnítẹ̀
+
+            // Logic and comparison
+            "ati": "and", // dárúkọ tó pọ̀
+            "tabi": "or",
+            "kii ṣe": "not",
+            "jẹ": "equals",
+            "ko jẹ": "not equals",
+            "tobi ju": "greater than",
+            "tobiju": "greater than",
+            "kere ju": "less than",
+            "kereju": "less than",
+            "tobi ju tabi jẹ": "greater than or equal to",
+            "tobiju tabi jẹ": "greater than or equal to",
+            "kere ju tabi jẹ": "less than or equal to",
+            "kereju tabi jẹ": "less than or equal to",
+
+            // Arithmetic
+            "fikun": "plus",
+            "yọ kuro ninu": "minus",
+            "pin": "divide",
+            "iyipada": "modulus",
+            "lona": "times",
+
+            // Comments
+            "bẹrẹ asọye": "begin comment",
+            "pari asọye": "end comment",
+            "bẹrẹ asọye gigun": "begin single line comment",
+            "pari asọye gigun": "end single line comment",
+
+            // Keywords (Python + Java shared)
+            "se": "if",
+            "ṣé": "if",
+            "ṣe": "if",
+            "bibẹẹkọ": "else",
+            "fun": "for",
+            "nigbati": "while",
+            "pada": "return",
+            "ẹgbẹ": "class",
+            "ilana": "def",
+            "tẹsiwaju": "continue",
+            "kuro": "break",
+            "gbangba": "public",
+            "ominira": "static",
+            "òfo": "void",
+            "ofo": "void",
+            "koko": "main",
+            "pataki": "main",
+            "ọrọ": "String",
+            "eto": "System",
+            "kọ ila": "print",
+
+
+            // Literals
+            "òtítọ́": "true",
+            "otitọ": "true",
+            "otito": "true",
+            "bẹ́ẹ̀ni": "true",
+            "beeni": "true",
+            "irọ́": "false",
+            "iro": "false",
+            "ko si": "none",
+        };
+
+        function translateYorubaToEnglish(text) {
+            let result = text.toLowerCase();
+            const ordered = Object.keys(yorubaToEnglish).sort((a, b) => b.length - a.length);
+
+            for (const key of ordered) {
+                const pattern = new RegExp("\\b" + key + "\\b", "gi");
+                result = result.replace(pattern, yorubaToEnglish[key]);
+            }
+            // return result;
+            return result.normalize('NFC');
+        }
+
+        // === Spoken → Java Symbol Mapping ===
+        const javaSpeechMap = {
+            // Brackets and braces
+            "open bracket": "(",
+            "close bracket": ")",
+            "open square bracket": "[",
+            "close square bracket": "]",
+            "open squiggle": "{",
+            "close squiggle": "}",
+
+            // Punctuation and separators
+            "semicolon": ";",
+            "colon": ":",
+            "comma": ",",
+            "dot": ".",
+            "quote": "\"",
+            "single quote": "'",
+            "space": " ",
+            "newline": "\n",
+            "enter": "\n",
+
+            // Arithmetic operators
+            "plus": "+",
+            "minus": "-",
+            "times": "*",
+            "divide": "/",
+            "mod": "%",
+            "modulus": "%",
+
+            // Comparison and logic
+            "equals": "=",
+            "equal to": "==",
+            "not equals": "!=",
+            "greater than": ">",
+            "less than": "<",
+            "greater than or equal to": ">=",
+            "less than or equal to": "<=",
+            "double pipe": "||",
+            "or": "||",
+            "double ampersand": "&&",
+            "and": "&&",
+            "not": "!",
+
+            // Assignment variants
+            "plus equals": "+=",
+            "minus equals": "-=",
+            "times equals": "*=",
+            "divide equals": "/=",
+
+            // Increment / decrement
+            "plus plus": "++",
+            "minus minus": "--",
+
+            // Control keywords
+            "if": "if",
+            "else": "else",
+            "for": "for",
+            "while": "while",
+            "do": "do",
+            "switch": "switch",
+            "case": "case",
+            "default": "default",
+            "break": "break",
+            "continue": "continue",
+            "return": "return",
+
+            // Declarations
+            "public": "public",
+            "private": "private",
+            "protected": "protected",
+            "static": "static",
+            "final": "final",
+            "void": "void",
+            "class": "class",
+            "interface": "interface",
+            "extends": "extends",
+            "implements": "implements",
+            "new": "new",
+
+            // Types
+            "int": "int",
+            "float": "float",
+            "double": "double",
+            "boolean": "boolean",
+            "char": "char",
+            "string": "String",
+            "long": "long",
+            "short": "short",
+
+            // Common literals
+            "true": "true",
+            "false": "false",
+            "null": "null",
+
+            // Comments
+            "begin comment": "/*",
+            "start comment": "/*",
+            "open comment": "/*",
+            "end comment": "*/",
+            "stop comment": "*/",
+            "close comment": "*/",
+            "begin single line comment": "//",
+            "start single line comment": "//",
+            "open single line comment": "//",
+            "end single line comment": "",
+            "stop single line comment": "",
+            "close single line comment": "",
+
+        };
+
+        // === Interpreter Function ===
+        function interpretJavaSpeech(text) {
+            // Sort keys longest-first so “greater than or equal to” beats “greater than”
+            const ordered = Object.keys(javaSpeechMap).sort((a, b) => b.length - a.length);
+            let result = text.toLowerCase();
+            for (const key of ordered) {
+                const pattern = new RegExp("\\b" + key + "\\b", "gi");
+                result = result.replace(pattern, javaSpeechMap[key]);
+            }
+            return result;
+        }
+
+        // === Spoken → Python Symbol Mapping ===
+        const pythonSpeechMap = {
+            // Brackets and braces
+            "open bracket": "(",
+            "close bracket": ")",
+            "open square bracket": "[",
+            "close square bracket": "]",
+            "open brace": "{",
+            "close brace": "}",
+
+            // Punctuation and structure
+            "colon": ":",
+            "comma": ",",
+            "dot": ".",
+            "quote": "\"",
+            "single quote": "'",
+            "newline": "\n",
+            "enter": "\n",
+            "space": " ",
+
+            // Arithmetic
+            "plus": "+",
+            "minus": "-",
+            "times": "*",
+            "multiply": "*",
+            "divide": "/",
+            "mod": "%",
+            "modulus": "%",
+
+            // Comparison / logic
+            "equals": "=",
+            "equal to": "==",
+            "not equals": "!=",
+            "greater than": ">",
+            "less than": "<",
+            "greater than or equal to": ">=",
+            "less than or equal to": "<=",
+            "and": "and",
+            "or": "or",
+            "not": "not",
+
+            // Assignment
+            "plus equals": "+=",
+            "minus equals": "-=",
+            "times equals": "*=",
+            "divide equals": "/=",
+
+            // Keywords
+            "def": "def",
+            "class": "class",
+            "if": "if",
+            "else": "else",
+            "elif": "elif",
+            "for": "for",
+            "while": "while",
+            "in": "in",
+            "return": "return",
+            "import": "import",
+            "from": "from",
+            "as": "as",
+            "try": "try",
+            "except": "except",
+            "finally": "finally",
+            "with": "with",
+            "print": "print",
+            "break": "break",
+            "continue": "continue",
+            "pass": "pass",
+
+            // Literals / booleans / None
+            "true": "True",
+            "false": "False",
+            "none": "None",
+
+            // Comments
+            "begin comment": "\"\"\"",
+            "start comment": "\"\"\"",
+            "open comment": "\"\"\"",
+            "end comment": "\"\"\"",
+            "stop comment": "\"\"\"",
+            "close comment": "\"\"\"",
+            "begin single line comment": "#",
+            "start single line comment": "#",
+            "open single line comment": "#",
+            "end single line comment": "",
+            "stop single line comment": "",
+            "close single line comment": "",
+
+            // Indentation control
+            "indent": "    ",
+            "tab": "    ",
+            "dedent": "<DEDENT>",
+            "unindent": "<DEDENT>",
+
+        };
+
+        function interpretPythonSpeech(text) {
+            const ordered = Object.keys(pythonSpeechMap).sort((a, b) => b.length - a.length);
+            let result = text.toLowerCase();
+
+            // Primary replacements
+            for (const key of ordered) {
+                const pattern = new RegExp("\\b" + key + "\\b", "gi");
+                result = result.replace(pattern, pythonSpeechMap[key]);
+            }
+
+            // Handle dedent after replacements
+            // Remove 4 spaces from the end of the previous line when encountering <DEDENT>
+            result = result.replace(/<DEDENT>/g, () => {
+                return "\n"; // newline to simulate dedent visually
+            });
+
+            return result;
+        }
+
+    </script>
+</body>
+</html>
