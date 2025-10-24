@@ -62,7 +62,7 @@ Typist runs purely on front-end JavaScript and works inside:
 
 - **Standard web pages** (no backend required),
 - **Electron** windows (Chromium engine),
-- **WebView2** (Edge runtime for Windows apps).
+- **WebView2** (Edge runtime for Windows apps - see demo <a href="https://github.com/tundeadetunji/Typist-WebView2-Container-Demo" target="_blank">here</a>).
 
 Just include your script and required DOM elements (buttons, toggles, display area).  
 All functionality runs sandboxed in the browser thread — no external API keys or server calls.
@@ -591,5 +591,3 @@ The translation applies first (Yoruba → English keyword), and then Typist inte
     </tr>
   </tbody>
 </table>
-
-
