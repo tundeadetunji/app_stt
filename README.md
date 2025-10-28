@@ -266,7 +266,7 @@ Typist writes:
 
 ```java
 def akọkọ():
-    print("Hello aye")
+    print("bawo ni")
 ```
 
 ### Yoruba ⇄ Programming Vocabulary Reference
